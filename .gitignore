@@ -1,0 +1,18 @@
+# IntelliJ
+*/target/
+*/*/target/
+*.iml
+
+# Package Files #
+*.jar
+*.war
+*.ear
+*logFile*.log
+
+target
+.mvn
+.settings
+.classpath
+.project
+.factorypath
+/.apt_generated/
