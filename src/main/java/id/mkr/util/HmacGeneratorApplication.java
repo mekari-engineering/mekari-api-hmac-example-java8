@@ -85,7 +85,7 @@ public class HmacGeneratorApplication {
             .post(body)
             .addHeader("Date", getDateTimeNowUtcString())
             .addHeader("Authorization",
-                generateAuthSignature(clientId, clientSecret, method, path, getDateTimeNowUtcString())
+                generateAuthSignature(clientId, clientSecret, method, path + queryParam, getDateTimeNowUtcString())
             )
             .addHeader("x-idempotency-key", UUID.randomUUID().toString())
             .build();
@@ -101,9 +101,9 @@ public class HmacGeneratorApplication {
 
     private static String generateAuthSignature(
         String clientId, String clientSecret, String method,
-        String path, String dateString
+        String pathWithQueryParam, String dateString
     ) {
-        String payload = generatePayload(path, method, dateString);
+        String payload = generatePayload(pathWithQueryParam, method, dateString);
         String signature = hmacSha256(clientSecret, payload);
 
         return "hmac username=\"" + clientId
@@ -111,8 +111,8 @@ public class HmacGeneratorApplication {
             + signature + "\"";
     }
 
-    private static String generatePayload(String path, String method, String dateString) {
-        String requestLine = method + ' ' + path + " HTTP/1.1";
+    private static String generatePayload(String pathWithQueryParam, String method, String dateString) {
+        String requestLine = method + ' ' + pathWithQueryParam + " HTTP/1.1";
         return String.join("\n", Arrays.asList("date: " + dateString, requestLine));
     }
 
