@@ -4,7 +4,7 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
@@ -30,7 +30,7 @@ public class HmacGeneratorApplication {
         OkHttpClient client = new OkHttpClient();
 
         //      Request Base URL
-        String base = "https://api-sandbox-sso.mekari.com";
+        String base = "https://api.mekari.com";
 
         //      HMAC User client id
         String clientId = System.getenv("MEKARI_API_CLIENT_ID");
@@ -80,12 +80,16 @@ public class HmacGeneratorApplication {
             "}";
 
         RequestBody body = RequestBody.create(json, JSON); // new
+
+        //      Request Date
+        String dateFormatted = getDateTimeNowUtcString();
+
         Request request = new Request.Builder()
             .url(base + path + queryParam)
             .post(body)
-            .addHeader("Date", getDateTimeNowUtcString())
+            .addHeader("Date", dateFormatted)
             .addHeader("Authorization",
-                generateAuthSignature(clientId, clientSecret, method, path + queryParam, getDateTimeNowUtcString())
+                generateAuthSignature(clientId, clientSecret, method, path + queryParam, dateFormatted)
             )
             .addHeader("x-idempotency-key", UUID.randomUUID().toString())
             .build();
@@ -118,12 +122,12 @@ public class HmacGeneratorApplication {
 
     private static String hmacSha256(String clientSecret, String payload) {
         try {
-            SecretKeySpec signingKey = new SecretKeySpec(clientSecret.getBytes("UTF-8"), "HmacSHA256");
+            SecretKeySpec signingKey = new SecretKeySpec(clientSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
             Mac mac = Mac.getInstance("HmacSHA256");
             mac.init(signingKey);
 
-            return Base64.getEncoder().encodeToString(mac.doFinal(payload.getBytes("UTF-8")));
-        } catch (NoSuchAlgorithmException | UnsupportedEncodingException | InvalidKeyException exception) {
+            return Base64.getEncoder().encodeToString(mac.doFinal(payload.getBytes(StandardCharsets.UTF_8)));
+        } catch (NoSuchAlgorithmException | InvalidKeyException exception) {
             exception.printStackTrace();
             return null;
         }
@@ -131,7 +135,7 @@ public class HmacGeneratorApplication {
 
     private static String getDateTimeNowUtcString() {
         Instant instant = Instant.now();
-        return DateTimeFormatter.RFC_1123_DATE_TIME
+        return DateTimeFormatter.ofPattern("EEE, dd MMM yyyy HH:mm:ss O")
             .withZone(ZoneOffset.UTC)
             .withLocale(Locale.US)
             .format(instant);
